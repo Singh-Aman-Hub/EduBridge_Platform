@@ -134,7 +134,39 @@ button:hover{
     cursor: pointer;
 }
 
+/* Default toast style */
+.Toastify__toast {
+  font-size: 16px;
+  padding: 10px;
+  min-height: 56px;
+}
 
+/* For smaller screens */
+@media (max-width: 600px) {
+  .Toastify__toast {
+    font-size: 12px;
+    padding: 6px 8px;
+    min-height: 56px;
+    width:70vw;
+    
+  }
+
+  .Toastify__toast-container {
+    margin-top: 80px ; /* optional tweak for mobile */
+    
+    max-width:70vw;
+    /* position: relative; */
+    /* right:0px; */
+  }
+}
+@media (max-width: 600px) {
+  .Toastify__toast-container--top-right {
+    right: 0;
+    left: auto;
+    width: auto !important;
+    max-width: 90%;
+  }
+}
 /* Add this to your CSS file */
 
 

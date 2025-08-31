@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 import axios from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import './ChatList.css'; // ✅ Reuse existing CSS
@@ -12,7 +13,7 @@ const SeniorChatList = () => {
         const student=(localStorage.getItem('student'));
         if (!userId || student!=="college" ) {
             console.error("❌ No logged-in senior found in localStorage");
-            alert("Are you kidding? you're a junior!")
+            toast.error("Are you kidding? you're a junior!");
             navigate('/chatlist');
             return;
         }
@@ -24,11 +25,10 @@ const SeniorChatList = () => {
                 setJuniors(res.data);
             } catch (err) {
                 if(err.response.status===400){
-                alert("Your session expired, Kindly login again!");
+                toast.error("Your session expired, Kindly login again!");
                 localStorage.removeItem("user");
                 localStorage.removeItem("student");
                 localStorage.removeItem("token");
-
                 navigate('/login');
                 }
                 console.error('❌ Error fetching juniors:', err);

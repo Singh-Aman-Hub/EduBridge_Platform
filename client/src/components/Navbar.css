@@ -63,6 +63,7 @@
 
 /* ----- Mobile Menu (hidden by default) ----- */
 .mobile-nav {
+  padding-top: 100px;
   display: none;
   flex-direction: column;
   /* align-items: center; */
@@ -72,7 +73,7 @@
   background-color: rgba(51, 51, 51, 0.95);
   padding: 3% 5%;
   width: 50vw;
-  height: 87vh;
+  height: 50vh;
   border-radius: 8px 0 0 8px;
 }
 

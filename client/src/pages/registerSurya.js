@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../axiosConfig';
 import './loginSurya.css';
@@ -28,7 +29,7 @@ const RegisterSurya = () => {
   const registering = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password || !form.student) {
-      alert('Enter Valid Credentials!');
+      toast.error('Enter Valid Credentials!');
       return;
     }
 
@@ -38,18 +39,18 @@ const RegisterSurya = () => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', response.data.user.id);
       localStorage.setItem('student', response.data.user.student);
-      alert('Registration Successful');
-      navigate('/profile');
+  toast.success('Registration Successful');
+  navigate('/profile');
     } catch (err) {
       if (err.response?.status === 400) {
-        alert('User already exists, proceed to Login!');
+        toast.error('User already exists, proceed to Login!');
         navigate('/login');
       } else if (err.response?.status === 403) {
-        alert('You are not authorized to perform this action.');
+        toast.error('You are not authorized to perform this action.');
       } else if (err.response?.status === 500) {
-        alert('Server error! Please try again later.');
+        toast.error('Server error! Please try again later.');
       } else {
-        alert('Server not running!');
+        toast.error('Server not running!');
       }
       console.log({ error: err.message });
     } finally {
@@ -73,6 +74,10 @@ const RegisterSurya = () => {
             EduBridge
           </div>
           <h1>Platform To Find Your Perfect College Match</h1>
+          <br></br>
+          
+          <hr></hr>
+          <br></br>
           <p>Sign up to connect with seniors, explore options, and continue your journey.</p>
         </div>
       </div>

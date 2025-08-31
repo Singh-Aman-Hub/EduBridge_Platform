@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from 'react-toastify';
 import axios from "../axiosConfig";
 import "./MatchResults.css";
 
@@ -24,7 +25,7 @@ const MatchResults = () => {
       setMatches(parsed);
     } catch (error) {
       if (error.response?.status === 400) {
-        alert("Your session expired, kindly login again.");
+        toast.error("Your session expired, kindly login again.");
         localStorage.clear();
         window.location.href = "/login";
       } else {

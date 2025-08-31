@@ -1,5 +1,6 @@
 // Navbar.jsx
 import React, { useState ,useEffect} from 'react';
+import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 import axios from '../axiosConfig';
@@ -11,9 +12,9 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    alert("Logged out!");
-    navigate('/login');
+  localStorage.removeItem('token');
+  toast.info("Logged out!");
+  navigate('/login');
   };
   const student = localStorage.getItem('student');
   
@@ -40,24 +41,24 @@ const Navbar = () => {
     <nav className="navbar">
       <h2>EduBridge</h2>
             <div className="nav-links">
-              <Link to="/">Home</Link>
+              <Link to="/">Home ⬇</Link>
               {/* <Link to="/contact">Contact Us</Link> */}
       
             
               {!token ? (
                 <>
-                  <Link to="/login">Login</Link>
-                  <Link to="/register">Register</Link>
+                  <Link to="/login">Login ⬇</Link>
+                  <Link to="/register">Register ⬇</Link>
 
                 </>
               ) : (
                 <>
-                    <Link to="/chatpage">ChatBox</Link>
+                    <Link to="/chatpage">ChatBox⬇</Link>
                     
-                    {student==='school' && <Link to="/match">AI Profile-Match</Link>}
-                    {student==='school' && <Link to="/browseseniors">Browse-Seniors</Link>}
-                    {student==='college' && <Link to="/browseseniors">Other College Buddies</Link>}
-                  <Link to="/profile">Profile - {username.split(" ")[1]} ⬇</Link>
+                    {student==='school' && <Link to="/match">AI Profile-Match⬇</Link>}
+                    {student==='school' && <Link to="/browseseniors">Browse-Seniors⬇</Link>}
+                    {student==='college' && <Link to="/browseseniors">Other College Buddies⬇</Link>}
+                  <Link to="/profile">Profile - {username.split(" ")[1]}⬇</Link>
                   <button className="logout-btn" onClick={handleLogout}>Logout</button>
                 </>
               )}
@@ -70,26 +71,26 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       <div className={`mobile-nav ${isOpen ? 'show' : ''}`}>
-        <Link to="/" onClick={() => setIsOpen(false)}>Home</Link>
+        <Link to="/" onClick={() => setIsOpen(false)}>Home ⮕</Link>
        
         {/* <Link to="/profile" onClick={() => setIsOpen(false)}>Profile</Link> */}
         {!token ? (
                 <>
             
-                  <Link to="/login" onClick={() => setIsOpen(false)}>Login</Link>
+                  <Link to="/login" onClick={() => setIsOpen(false)}>Login ⮕</Link>
              
-                  <Link to="/register" onClick={() => setIsOpen(false)}>Register</Link>
+                  <Link to="/register" onClick={() => setIsOpen(false)}>Register ⮕</Link>
                 </>
               ) : (
                 <>
 
-                  <Link to="/chatpage" onClick={() => setIsOpen(false)}>ChatBox</Link>
+                  <Link to="/chatpage" onClick={() => setIsOpen(false)}>ChatBox ⮕</Link>
                     
-                    {student==='school' && <Link to="/match" onClick={() => setIsOpen(false)}>AI Profile-Match</Link>}
-                    {student==='school' && <Link to="/browseseniors" onClick={() => setIsOpen(false)}>Browse-Seniors</Link>}
+                    {student==='school' && <Link to="/match" onClick={() => setIsOpen(false)}>AI Profile-Match ⮕</Link>}
+                    {student==='school' && <Link to="/browseseniors" onClick={() => setIsOpen(false)}>Browse-Seniors ⮕</Link>}
      
-                  <Link to="/profile" onClick={() => setIsOpen(false)}>Profile - {username.split(" ")[1]}⬇</Link>
-                  <button className="logout-btn" onClick={handleLogout}>Logout</button>
+                  <Link to="/profile" onClick={() => setIsOpen(false)}>Profile - {username.split(" ")[1]} ⮕</Link>
+                  <button className="logout-btn" onClick={handleLogout}>Logout </button>
                 </>
               )}
 

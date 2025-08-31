@@ -64,11 +64,11 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('./login.png'); /* Your uploaded image URL */
+  background-image: url('./graffti3.png'); /* Your uploaded image URL */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: blur(5px); /* Apply blur only to this pseudo-element */
+  
   transform: scale(1.02); /* Slight scale to prevent blur artifacts at edges */
   z-index: 0; /* Place it behind the content */
 }
@@ -363,7 +363,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('./login.png'); /* Your uploaded image URL */
+    background-image: url('./graffti3.png'); /* Your uploaded image URL */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

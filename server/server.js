@@ -44,8 +44,7 @@ const JWT_SECRET= process.env.JWT_SECRET;
 
 
 const db_connection= process.env.DB_URL_online;
-// mongoose.connect('mongodb+srv://Aman102006:12344321@cluster0.si4zhhg.mongodb.net/?retryWrites=true&w=majority')
-// mongoose.connect('mongodb://127.0.0.1:27017/EduBridgeUsers')
+
     mongoose.connect(db_connection)
     .then(()=>{
         console.log("Connected to Mongo DB- Collection EduBridgeUsers")

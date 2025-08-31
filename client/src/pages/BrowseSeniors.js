@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 import axios from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import './BrowseSeniors.css';
@@ -20,7 +21,7 @@ const BrowseSeniors = () => {
                 setSeniors(collegeStudents);
             } catch (err) {
                 if (err.response?.status === 400) {
-                    alert("Your session expired, Kindly login again!");
+                    toast.error("Your session expired, Kindly login again!");
                     localStorage.clear();
                     navigate('/login');
                 }

@@ -1,4 +1,6 @@
 import {BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 // import { useState } from 'react';
 // import Login from './pages/Login'
@@ -6,10 +8,10 @@ import './App.css';
 import Profile from './pages/Profile'
 // import CustomCursor from './CustomCursor';
 import HomePage from './pages/HomePage'
-import ChatWindow from './pages/ChatWindow'
-import ChatList from './pages/ChatList'
+// import ChatWindow from './pages/ChatWindow'
+// import ChatList from './pages/ChatList'
 import BrowseSeniors from './pages/BrowseSeniors';
-import SeniorChatList from './pages/SeniorChatList'
+// import SeniorChatList from './pages/SeniorChatList'
 import Match from './pages/MatchResults';
 import Navbar from './components/navbar';
 import LoginSurya from './pages/loginSurya';
@@ -27,7 +29,22 @@ function App() {
   // const [start,setStart]=useState(true);
   return (
     <Router>
-      
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+         pauseOnFocusLoss={false} 
+        draggable
+        pauseOnHover
+        theme="colored"
+          style={{ marginTop: "100px" }} 
+          
+
+      />
       <Navbar/>
       <Routes>
         {/* <Route path='/Login' element={<Login/>}/> */}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { toast } from 'react-toastify';
 import io from 'socket.io-client';
 import axios from '../axiosConfig';
 import './ChatList.css';
@@ -21,7 +22,7 @@ const ChatList = ({ onChatSelect, refreshChats }) => {
             setChats(res.data);
         } catch (err) {
             if (err.response?.status === 400) {
-                alert("Your session expired, Kindly login again!");
+                toast.error("Your session expired, Kindly login again!");
                 localStorage.removeItem("user");
                 localStorage.removeItem("student");
                 localStorage.removeItem("token");

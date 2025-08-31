@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../axiosConfig';
 import './loginSurya.css';
@@ -30,15 +31,15 @@ function Login() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', response.data.user.id);
       localStorage.setItem('student', response.data.user.student);
-      alert('Login successful! Kindly proceed');
-      navigate('/profile');
+  toast.success('Login successful! Kindly proceed');
+  navigate('/profile');
     } catch (err) {
       if (err.response?.status === 401) {
-        alert('Login credentials not matched!');
+        toast.error('Login credentials not matched!');
       } else if (err.response?.status === 400) {
-        alert('Username/password not matched!');
+        toast.error('Username/password not matched!');
       } else {
-        alert('Something went wrong. Please try again.');
+        toast.error('Something went wrong. Please try again.');
       }
       setData({ email: '', password: '' });
       console.error('Login failed', err);
@@ -65,6 +66,9 @@ function Login() {
           </div>
           <h1>Platform To Find Your Perfect College Match</h1>
           <br />
+          
+          <hr></hr>
+          <br></br>
           <p>Sign in to connect with seniors, explore college options with various features and continue your educational journey.</p>
         </div>
       </div>

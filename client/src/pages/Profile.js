@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { toast } from 'react-toastify';
 import axios from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
@@ -24,7 +25,7 @@ const Profile = () => {
       } catch (err) {
         const status = err.response?.status;
         if (status === 401 || status === 400) {
-          alert("Session expired or unauthorized. Please login again.");
+          toast.error("Session expired or unauthorized. Please login again.");
           localStorage.clear();
           navigate('/login');
         } else {
@@ -91,7 +92,7 @@ const Profile = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      alert(res.data.msg);
+  toast.success(res.data.msg);
       setEditMode(false);
 
       // Update local state with new data
@@ -105,13 +106,13 @@ const Profile = () => {
       }));
     } catch (err) {
       console.error('Update error:', err);
-      alert("Something went wrong while updating your profile.");
+  toast.error("Something went wrong while updating your profile.");
     }
   };
 
   const handleLogout = () => {
     localStorage.clear();
-    alert("Logged out successfully");
+  toast.info("Logged out successfully");
     navigate('/login');
   };
 

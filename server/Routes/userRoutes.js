@@ -364,7 +364,7 @@ router.post('/match', async (req, res) => {
     const seniors = await User.find({ student: "college" });
     const prompt = generateGeminiPrompt(junior, seniors,additionalNotes);
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Or "gemini-pro", based on what you want
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Or "gemini-pro", based on what you want
     console.log("This is the prompt for GEMINI-"+prompt)
 
     const result = await model.generateContent(prompt);

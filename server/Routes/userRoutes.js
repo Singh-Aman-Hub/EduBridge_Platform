@@ -1,25 +1,32 @@
-const express= require('express')
-const router= express.Router();
+const express = require('express');
+const router = express.Router();
+
 const User = require('../models/user');
-const authMiddleware = require('../auth')
+const authMiddleware = require('../auth');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const storage = multer.memoryStorage(); // store image in memory as buffer
+
+const { GoogleGenAI } = require('@google/genai');
+
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// const { GoogleGenAI } = require('@google/genai');
+const JWT_SECRET = process.env.JWT_SECRET;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const gemini= process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(gemini); 
+if (!GEMINI_API_KEY) {
+  console.error("GEMINI_API_KEY is missing. Add it in Render environment variables.");
+}
 
-const JWT_SECRET= process.env.JWT_SECRET
-// console.log("JWT_SECRET:", JWT_SECRET);
+const ai = new GoogleGenAI({
+  apiKey: GEMINI_API_KEY,
+});
 
-//Gemini Prompting function starts here-----
+// ---------------- Gemini Prompt Function Starts ----------------
 
-function generateGeminiPrompt(junior, seniors,additionalNotes="") {
+function generateGeminiPrompt(junior, seniors, additionalNotes = "") {
   const juniorInfo = `
 Junior Preferences:
 - Field of Interest: ${junior?.preferences?.fieldInterest || "N/A"}
@@ -27,21 +34,20 @@ Junior Preferences:
 - Preferred Location: ${junior?.preferences?.locationPreference || "N/A"}
 `;
 
-
-
   let seniorsInfo = "";
+
   seniors.forEach((senior, idx) => {
     seniorsInfo += `
 Senior ${idx + 1}:
-- Name: ${senior.name}
+- Name: ${senior.name || "N/A"}
 - Field of Study: ${senior?.fieldOfStudy || "N/A"}
 - College: ${senior?.college || "N/A"}
 - Goals: ${senior?.goals || "N/A"}
 - Fee: ${senior?.currentFee || "N/A"}
-- city: ${senior?.city || "N/A"}
-- degree: ${senior?.degree || "N/A"}
-- seniorId: ${senior?._id || "N/A"}\n`;
-
+- City: ${senior?.city || "N/A"}
+- Degree: ${senior?.degree || "N/A"}
+- seniorId: ${senior?._id || "N/A"}
+`;
   });
 
   return `
@@ -49,15 +55,30 @@ You are given a junior profile and a list of senior profiles.
 
 Your task is to evaluate and return the top 5 senior profiles that match the junior's preferences the best.
 
-Return the results in the following format:
+Important rules:
+1. Return ONLY valid JSON.
+2. Do not add markdown.
+3. Do not add \`\`\`json blocks.
+4. Do not add extra explanation outside JSON.
+5. The response must be a JSON array.
+6. Each object must have exactly these fields:
+   - name
+   - matchPercentage
+   - reason
+   - seniorId
+
+Expected output format:
 [
-  { "name": "Senior Name", "matchPercentage": 85, "reason": "..." ,"seniorId":"seniorId"},
-  ...
+  {
+    "name": "Senior Name",
+    "matchPercentage": 85,
+    "reason": "Short reason why this senior matches the junior",
+    "seniorId": "seniorId"
+  }
 ]
 
 Junior Details:
 ${juniorInfo}
-
 
 Additional Notes from Junior:
 ${additionalNotes || "None provided."}
@@ -67,15 +88,24 @@ ${seniorsInfo}
 `;
 }
 
-//Gemini Prompt function ends here---
+// ---------------- Gemini Prompt Function Ends ----------------
 
-router.get('/', (req,res)=>{
-    try{
-        res.status(200).json("What the hell it is working! Welcome to the TO_DO_LIST server")
-    }catch(err){
-        res.status(500).json({error: err.message})
-    }
-})
+function cleanGeminiJsonText(text) {
+  if (!text) return "";
+
+  return text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+}
+
+router.get('/', (req, res) => {
+  try {
+    res.status(200).json("What the hell it is working! Welcome to the TO_DO_LIST server");
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.post("/add-full-user", async (req, res) => {
   try {
@@ -94,6 +124,7 @@ router.post("/add-full-user", async (req, res) => {
     } = req.body;
 
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
       return res
         .status(400)
@@ -113,7 +144,7 @@ router.post("/add-full-user", async (req, res) => {
       degree,
       fieldOfStudy,
       goals,
-      preferences, // will be saved as nested object
+      preferences,
     });
 
     await newUser.save();
@@ -138,30 +169,37 @@ router.post("/add-full-user", async (req, res) => {
   }
 });
 
-router.get('/seniorProfile/:id',async (req, res) => {
-  try{
-    const {id}= req.params;
-    const user=await User.findById(id);
+router.get('/seniorProfile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
     let imageBase64 = null;
 
     if (user.image && user.image.data) {
       imageBase64 = `data:${user.image.contentType};base64,${user.image.data.toString('base64')}`;
     }
 
-    const data={
-        ...user.toObject(),
-        image: imageBase64,
+    const data = {
+      ...user.toObject(),
+      image: imageBase64,
     };
-    
-      res.json({msg: `Hola ${user.name+" "},`,
-      
-      data:data
-      });
-  }catch(err){
-      res.status(500).json(err+"change it man!")
+
+    res.json({
+      msg: `Hola ${user.name} ,`,
+      data: data,
+    });
+
+  } catch (err) {
+    console.error("Senior profile error:", err);
+    res.status(500).json({ error: err.message });
   }
 });
-
 
 router.get('/protected', authMiddleware, async (req, res) => {
   try {
@@ -171,8 +209,8 @@ router.get('/protected', authMiddleware, async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    // ✅ Convert image buffer to base64 string if it exists
     let imageBase64 = null;
+
     if (user.image && user.image.data) {
       imageBase64 = `data:${user.image.contentType};base64,${user.image.data.toString('base64')}`;
     }
@@ -184,11 +222,11 @@ router.get('/protected', authMiddleware, async (req, res) => {
       student: user.student,
       data: {
         ...user.toObject(),
-        image: imageBase64 // ✅ Send base64-encoded image instead of raw buffer
-      }
+        image: imageBase64,
+      },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Protected route error:", err);
     res.status(500).json({ error: 'Brooo! Server error' });
   }
 });
@@ -217,26 +255,42 @@ router.get('/allUsers', authMiddleware, async (req, res) => {
   }
 });
 
-// Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: "User not found" });
+
+    if (!user) {
+      return res.status(400).json({ msg: "User not found" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ msg: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '6h' });
+    if (!isMatch) {
+      return res.status(401).json({ msg: "Invalid credentials" });
+    }
 
-    res.json({ token, user: { id: user._id,student:user.student, name: user.name, email: user.email } });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
+      expiresIn: '6h',
+    });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        student: user.student,
+        name: user.name,
+        email: user.email,
+      },
+    });
+
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-
-// Update senior extended profile with optional image
 router.put('/profile/senior/:id', upload.single('image'), async (req, res) => {
   const { college, fieldOfStudy, goals, currentFee, city, degree } = req.body;
 
@@ -251,7 +305,6 @@ router.put('/profile/senior/:id', upload.single('image'), async (req, res) => {
       return res.status(403).json({ msg: "Only seniors can update this profile" });
     }
 
-    // ✅ Update fields if provided
     user.college = college || user.college;
     user.fieldOfStudy = fieldOfStudy || user.fieldOfStudy;
     user.goals = goals || user.goals;
@@ -259,7 +312,6 @@ router.put('/profile/senior/:id', upload.single('image'), async (req, res) => {
     user.city = city || user.city;
     user.degree = degree || user.degree;
 
-    // ✅ If image is uploaded, update image buffer & contentType
     if (req.file) {
       user.image = {
         data: req.file.buffer,
@@ -269,14 +321,17 @@ router.put('/profile/senior/:id', upload.single('image'), async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ msg: "Senior profile updated successfully", user });
+    res.status(200).json({
+      msg: "Senior profile updated successfully",
+      user,
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error("Senior update error:", err);
     res.status(500).json({ error: "Server error while updating senior profile" });
   }
 });
 
-// Update junior preferences with optional image
 router.put('/profile/junior/:id', authMiddleware, upload.single('image'), async (req, res) => {
   const { collegeType, fieldInterest, locationPreference } = req.body;
 
@@ -291,14 +346,12 @@ router.put('/profile/junior/:id', authMiddleware, upload.single('image'), async 
       return res.status(403).json({ msg: "Seniors cannot update preferences" });
     }
 
-    // ✅ Update preferences
     user.preferences = {
-      collegeType: collegeType || user.preferences.collegeType,
-      fieldInterest: fieldInterest || user.preferences.fieldInterest,
-      locationPreference: locationPreference || user.preferences.locationPreference
+      collegeType: collegeType || user.preferences?.collegeType,
+      fieldInterest: fieldInterest || user.preferences?.fieldInterest,
+      locationPreference: locationPreference || user.preferences?.locationPreference,
     };
 
-    // ✅ If image is uploaded, update image buffer & contentType
     if (req.file) {
       user.image = {
         data: req.file.buffer,
@@ -308,29 +361,44 @@ router.put('/profile/junior/:id', authMiddleware, upload.single('image'), async 
 
     await user.save();
 
-    res.status(200).json({ msg: "Junior preferences updated successfully", user });
+    res.status(200).json({
+      msg: "Junior preferences updated successfully",
+      user,
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error("Junior update error:", err);
     res.status(500).json({ error: "Server error while updating junior preferences" });
   }
 });
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, student,password} = req.body;
-   
-    
+    const { name, email, student, password } = req.body;
+
     const existingUser = await User.findOne({ email });
-    if (existingUser){
-        console.log(existingUser);
-        return res.status(400).json({ msg: "User already exists says Aman" + existingUser});
-    } 
+
+    if (existingUser) {
+      console.log(existingUser);
+      return res.status(400).json({
+        msg: "User already exists says Aman" + existingUser,
+      });
+    }
 
     const hashedPwd = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, student ,password: hashedPwd});
+
+    const newUser = new User({
+      name,
+      email,
+      student,
+      password: hashedPwd,
+    });
+
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { expiresIn: '6h' });
+    const token = jwt.sign({ id: newUser._id }, JWT_SECRET, {
+      expiresIn: '6h',
+    });
 
     res.status(201).json({
       token,
@@ -339,45 +407,89 @@ router.post('/register', async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         student: newUser.student,
-        student:newUser.student,
-      }
+      },
     });
-    
+
   } catch (err) {
-    // console.log(name,email,password)
-    console.log(err);
+    console.error("Register error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-
 router.post('/match', async (req, res) => {
   try {
-    // const juniorId = req.params.juniorId;
-    const { juniorId, additionalNotes } = req.body; // new field from the frontend
+    const { juniorId, additionalNotes } = req.body;
+
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({
+        error: "GEMINI_API_KEY is missing on server",
+      });
+    }
+
+    if (!juniorId) {
+      return res.status(400).json({
+        error: "juniorId is required",
+      });
+    }
 
     const junior = await User.findById(juniorId);
+
     if (!junior || junior.student !== "school") {
-      return res.status(404).json({ error: "Junior user not found" });
+      return res.status(404).json({
+        error: "Junior user not found",
+      });
     }
 
     const seniors = await User.find({ student: "college" });
-    const prompt = generateGeminiPrompt(junior, seniors,additionalNotes);
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Or "gemini-pro", based on what you want
-    console.log("This is the prompt for GEMINI-"+prompt)
+    if (!seniors || seniors.length === 0) {
+      return res.status(404).json({
+        error: "No senior profiles found",
+      });
+    }
 
-    const result = await model.generateContent(prompt);
-    const response =  result.response;
-    const text =  response.text();
+    const prompt = generateGeminiPrompt(junior, seniors, additionalNotes);
 
-    res.json({ message: "Matching completed", result: text });
+    console.log("Gemini matching started for junior:", juniorId);
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const rawText = response.text;
+    const cleanedText = cleanGeminiJsonText(rawText);
+
+    let parsedResult;
+
+    try {
+      parsedResult = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("Gemini JSON parse error:", parseError);
+      console.error("Raw Gemini response:", rawText);
+
+      return res.status(500).json({
+        error: "Gemini returned invalid JSON",
+        rawResult: rawText,
+      });
+    }
+
+    res.json({
+      message: "Matching completed",
+      result: parsedResult,
+    });
 
   } catch (err) {
-    console.error("Matching error:", err);
-    res.status(500).json({ error: "Something went wrong during matching" });
+    console.error("Matching error full details:", err);
+
+    res.status(500).json({
+      error: "Something went wrong during matching",
+      details: err.message,
+    });
   }
 });
 
-
-module.exports= router
+module.exports = router;

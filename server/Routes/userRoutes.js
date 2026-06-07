@@ -16,6 +16,10 @@ const upload = multer({ storage });
 const JWT_SECRET = process.env.JWT_SECRET;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+if (!JWT_SECRET) {
+  console.error("JWT_SECRET is missing. Add it in Render environment variables.");
+}
+
 if (!GEMINI_API_KEY) {
   console.error("GEMINI_API_KEY is missing. Add it in Render environment variables.");
 }
@@ -46,7 +50,7 @@ Senior ${idx + 1}:
 - Fee: ${senior?.currentFee || "N/A"}
 - City: ${senior?.city || "N/A"}
 - Degree: ${senior?.degree || "N/A"}
-- seniorId: ${senior?._id || "N/A"}
+- seniorId: ${senior?._id?.toString() || "N/A"}
 `;
   });
 
@@ -61,7 +65,11 @@ Important rules:
 3. Do not add \`\`\`json blocks.
 4. Do not add extra explanation outside JSON.
 5. The response must be a JSON array.
-6. Each object must have exactly these fields:
+6. Return at most 5 seniors.
+7. Sort from highest matchPercentage to lowest.
+8. matchPercentage must be a number between 0 and 100.
+9. seniorId must be copied exactly from the senior profile.
+10. Each object must have exactly these fields:
    - name
    - matchPercentage
    - reason
@@ -93,10 +101,27 @@ ${seniorsInfo}
 function cleanGeminiJsonText(text) {
   if (!text) return "";
 
-  return text
+  return String(text)
     .replace(/```json/gi, "")
     .replace(/```/g, "")
     .trim();
+}
+
+function normalizeMatches(parsedResult) {
+  if (!Array.isArray(parsedResult)) {
+    return [];
+  }
+
+  return parsedResult
+    .filter(item => item && typeof item === "object")
+    .map(item => ({
+      name: item.name || "Unknown Senior",
+      matchPercentage: Number(item.matchPercentage) || 0,
+      reason: item.reason || "No reason provided.",
+      seniorId: item.seniorId || "",
+    }))
+    .sort((a, b) => b.matchPercentage - a.matchPercentage)
+    .slice(0, 5);
 }
 
 router.get('/', (req, res) => {
@@ -457,6 +482,7 @@ router.post('/match', async (req, res) => {
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        temperature: 0.4,
       },
     });
 
@@ -477,15 +503,18 @@ router.post('/match', async (req, res) => {
       });
     }
 
-    res.json({
+    const finalMatches = normalizeMatches(parsedResult);
+
+    return res.status(200).json({
       message: "Matching completed",
-      result: parsedResult,
+      result: finalMatches,
+      rawResult: cleanedText,
     });
 
   } catch (err) {
     console.error("Matching error full details:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Something went wrong during matching",
       details: err.message,
     });
